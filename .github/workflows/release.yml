@@ -1,0 +1,74 @@
+name: ESP32 Build & Release
+
+on:
+  push:
+    branches:
+      - main
+      - staging
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Instalar PlatformIO
+        run: |
+          pip install --upgrade platformio
+
+      - name: Compilar proyecto ESP32
+        run: |
+          pio run -e esp32dev
+
+      - name: Subir artefactos
+        uses: actions/upload-artifact@v4
+        with:
+          name: esp32-binaries
+          path: |
+            .pio/build/ESP32DEV/firmware.bin
+            .pio/build/ESP32DEV/bootloader.bin
+            .pio/build/ESP32DEV/partitions.bin
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar artefactos
+        uses: actions/download-artifact@v4
+        with:
+          name: esp32-binaries
+          path: .
+
+      - name: Obtener la siguiente versión
+        id: version
+        run: |
+          # Obtener el último tag
+          last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
+
+          # Si nunca hubo tag, empezamos en 1.0.0
+          if [ "$last_tag" = "v1.0.0" ] && [ "$(git tag -l | wc -l)" -eq 0 ]; then
+            new_tag="v1.0.0"
+          else
+            base=${last_tag#v}
+            IFS='.' read -r major minor patch <<< "$base"
+            patch=$((patch + 1))
+            new_tag="v$major.$minor.$patch"
+          fi
+
+          echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
+
+      - name: Crear Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.version.outputs.new_tag }}
+          name: Release ${{ steps.version.outputs.new_tag }}
+          files: |
+            firmware.bin
+            bootloader.bin
+            partitions.bin
+          prerelease: ${{ github.ref == 'refs/heads/staging' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
