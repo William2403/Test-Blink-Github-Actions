@@ -48,7 +48,7 @@ jobs:
       - name: Verificar contenido descargado
         run: ls -lh ./artifacts
 
-      - name: Obtener la siguiente versión
+      - name: Obtener la versión
         id: version
         run: |
           last_tag=$(git describe --tags --abbrev=0 2>/dev/null || echo "v1.0.0")
@@ -58,18 +58,26 @@ jobs:
           else
             base=${last_tag#v}
             IFS='.' read -r major minor patch <<< "$base"
-            patch=$((patch + 1))
-            new_tag="v$major.$minor.$patch"
+
+            if [ "${GITHUB_REF##*/}" = "staging" ]; then
+              # En staging usamos la misma versión
+              new_tag="v$major.$minor.$patch"
+            else
+              # En main incrementamos solo si no existe prerelease
+              patch=$((patch + 1))
+              new_tag="v$major.$minor.$patch"
+            fi
           fi
 
           echo "new_tag=$new_tag" >> $GITHUB_OUTPUT
 
-      - name: Crear Release
+      - name: Crear o actualizar Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.version.outputs.new_tag }}
           name: Release ${{ steps.version.outputs.new_tag }}
           files: ./artifacts/*
           prerelease: ${{ github.ref == 'refs/heads/staging' }}
+          draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
