@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #define led 2
+#define delayTime 5000
 
 void setup()
 {
@@ -10,7 +11,7 @@ void setup()
 void loop()
 {
   digitalWrite(led, HIGH);
-  delay(1000);
+  delay(delayTime);
   digitalWrite(led, LOW);
-  delay(1000);
+  delay(delayTime);
 }
