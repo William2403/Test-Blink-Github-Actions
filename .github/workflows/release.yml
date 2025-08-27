@@ -6,6 +6,9 @@ on:
       - main
       - staging
 
+permissions:
+  contents: write # <--- NECESARIO para crear releases
+
 jobs:
   build:
     runs-on: ubuntu-latest
