@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/staging' # Solo compila en staging
+    if: github.ref == 'refs/heads/staging'
     runs-on: ubuntu-latest
 
     steps:
@@ -39,6 +39,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Descargar artefactos
         uses: actions/download-artifact@v4
         with:
@@ -73,6 +76,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Obtener última pre-release
         id: pre
         run: |
