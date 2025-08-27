@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #define led 2
-#define delayTime 2000
+#define delayTime 1000
 
 void setup()
 {
