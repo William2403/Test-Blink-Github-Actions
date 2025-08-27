@@ -1,17 +1,19 @@
 name: ESP32 Build & Release
 
 on:
+  pull_request:
+    branches:
+      - main
   push:
     branches:
       - main
-      - staging
 
 permissions:
   contents: write
 
 jobs:
   build:
-    if: github.ref == 'refs/heads/staging'
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     runs-on: ubuntu-latest
 
     steps:
@@ -34,7 +36,7 @@ jobs:
             .pio/build/esp32dev/partitions.bin
 
   release-staging:
-    if: github.ref == 'refs/heads/staging'
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
     needs: build
     runs-on: ubuntu-latest
 
@@ -62,11 +64,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Renombrar artefactos con versión
+        run: |
+          mv ./artifacts/firmware.bin ./artifacts/firmware-${{ steps.version.outputs.tag }}.bin
+          mv ./artifacts/bootloader.bin ./artifacts/bootloader-${{ steps.version.outputs.tag }}.bin
+          mv ./artifacts/partitions.bin ./artifacts/partitions-${{ steps.version.outputs.tag }}.bin
+
       - name: Crear prerelease
         run: |
           gh release create "${{ steps.version.outputs.tag }}" ./artifacts/* \
             --title "Pre-release ${{ steps.version.outputs.tag }}" \
-            --notes "Build desde staging" \
+            --notes "Build desde PR a main" \
             --prerelease
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
