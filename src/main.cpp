@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #define led 2
-#define delayTime 25000
+#define delayTime 45000
+// Cambio por comentario en PR
 // Cambio por comentario en PR
 void setup()
 {
